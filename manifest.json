@@ -1,0 +1,17 @@
+{
+    "manifest_version": 1,
+    "name": "HideLyric",
+    "slug": "HideLyric",
+    "version": "1.0.0",
+    "author": "Lzhyrifx", 
+    "description": "自动隐藏网易云无意义桌面歌词(如纯音乐请欣赏,暂无歌词等)",
+    "betterncm_version": ">=0.2.5",
+    "preview": "example.png",
+    "injects": {
+        "Main": [ 
+            {
+                "file": "main.js"
+            }
+        ]
+    }
+}
