@@ -627,11 +627,11 @@ plugin.onConfig(() => {
 
 
     image.src =
-        "https://raw.githubusercontent.com/Lzhyrifx/HideLyric/main/example.png";
+        "https://raw.githubusercontent.com/Lzhyrifx/HideLyric/master/example.png";
 
 
     image.style.width =
-        "350px";
+        "300px";
 
 
     image.style.display =
