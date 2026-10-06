@@ -1,0 +1,50 @@
+name: Build HideLyric
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "HideLyric.exe"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Release
+        run: cargo build --release
+
+      - name: Copy executable
+        shell: pwsh
+        run: |
+          Copy-Item `
+            ".\target\release\HideLyric.exe" `
+            ".\HideLyric.exe" `
+            -Force
+
+      - name: Commit executable
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add HideLyric.exe
+
+          if (git diff --cached --quiet) {
+            exit 0
+          }
+
+          git commit -m "build: update HideLyric.exe [skip ci]"
+          git push

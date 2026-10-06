@@ -25,7 +25,7 @@ let meaninglessThreshold =
 let stateClearDelay =
     plugin.getConfig(
         "stateClearDelay",
-        200
+        100
     );
 
 
@@ -627,7 +627,7 @@ plugin.onConfig(() => {
 
 
     image.src =
-        "https://raw.githubusercontent.com/Lzhyrifx/HideLyric/master/example.png";
+        "https://raw.githubusercontent.com/Lzhyrifx/HideLyric/master/preview.png";
 
 
     image.style.width =

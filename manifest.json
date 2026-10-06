@@ -3,10 +3,13 @@
     "name": "HideLyric",
     "slug": "HideLyric",
     "version": "1.0.0",
-    "author": "Lzhyrifx", 
+    "author": "Lzhyrifx",
+    "author_links": ["https://github.com/Lzhyrifx"],
     "description": "自动隐藏网易云无意义桌面歌词(如纯音乐请欣赏,暂无歌词等)",
-    "betterncm_version": ">=0.2.5",
-    "preview": "example.png",
+    "betterncm_version": ">=1.0.0",
+    "type": "extension",
+    "ncm3-compatible": true,
+    "preview": "preview.png",
     "injects": {
         "Main": [ 
             {
