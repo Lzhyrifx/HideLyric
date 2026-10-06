@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - master
-    paths-ignore:
-      - "HideLyric.exe"
+    paths:
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
 
   workflow_dispatch:
 
