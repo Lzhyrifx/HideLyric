@@ -11,3 +11,4 @@ LICENSE
 .betterncm-ignore
 .gitignore
 build.ps1
+release.ps1
