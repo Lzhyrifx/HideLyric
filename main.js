@@ -1,3 +1,13 @@
+console.log(
+    "[HideLyric] location =",
+    location.href
+);
+
+console.log(
+    "[HideLyric] pluginPath =",
+    plugin.pluginPath
+);
+
 
 // Rust
 const RUST_EXE =
@@ -214,7 +224,7 @@ plugin.onConfig(() => {
 
     title.innerHTML = `
     HideLyric<br>
-    v1.0.0 by 
+    v1.0.1 by 
     <span 
         id="githubLink"
         style="
@@ -533,7 +543,7 @@ plugin.onConfig(() => {
         step="1"
         value="${meaninglessThreshold}"
         style="
-            width:60px;
+            width:65px;
             margin-left:8px;
         "
     />
@@ -813,10 +823,6 @@ async function ensureRust() {
                     ) {
 
                     if (await pingRust()) {
-
-                        console.log(
-                            "[HideLyric] ★ Rust daemon 已就绪"
-                        );
 
 
                         lastCommand =
@@ -1278,7 +1284,16 @@ function checkMeaninglessLyric() {
 
 
     const normalizedText =
-        fullText.replace(/\s/g, "");
+        fullText.replace(
+            /[\s，,]/g,
+            ""
+        );
+
+
+    const pureMusicKeywordDetected =
+        normalizedText.includes(
+            "纯音乐，请欣赏"
+        );
 
 
     const length =
@@ -1286,6 +1301,7 @@ function checkMeaninglessLyric() {
 
 
     const detected =
+        pureMusicKeywordDetected ||
         length < meaninglessThreshold;
 
 
