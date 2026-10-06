@@ -224,7 +224,7 @@ plugin.onConfig(() => {
 
     title.innerHTML = `
     HideLyric<br>
-    v1.0.1 by 
+    v1.0.2 by 
     <span 
         id="githubLink"
         style="
@@ -1292,7 +1292,7 @@ function checkMeaninglessLyric() {
 
     const pureMusicKeywordDetected =
         normalizedText.includes(
-            "纯音乐，请欣赏"
+            "纯音乐请欣赏"
         );
 
 
