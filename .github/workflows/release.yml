@@ -106,21 +106,58 @@ jobs:
           Write-Host `
             "生成插件: $plugin"
 
-
       - name: Create Release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag =
-              $env:GITHUB_REF_NAME
+          $tag = $env:GITHUB_REF_NAME
+          $version = $tag -replace '^v', ''
 
-          $plugin =
-              "HideLyric-$tag.plugin"
+          $plugin = "HideLyric-$tag.plugin"
+
+          $changelogPath = ".\CHANGELOG.md"
+
+          if (!(Test-Path $changelogPath)) {
+              throw "CHANGELOG.md not found."
+          }
+
+          $changelog = Get-Content `
+              $changelogPath `
+              -Raw `
+              -Encoding UTF8
+
+          $escapedVersion = [regex]::Escape($version)
+
+          $pattern = "(?ms)^##\s+(?:\[$escapedVersion\]|$escapedVersion)(?:[ \t].*)?\r?\n(.*?)(?=^##\s+|\z)"
+
+          $releaseMatch = [regex]::Match(
+              $changelog,
+              $pattern
+          )
+
+          if (!$releaseMatch.Success) {
+              throw "No CHANGELOG entry found for version $version."
+          }
+
+          $releaseNotes = $releaseMatch.Groups[1].Value.Trim()
+
+          if ([string]::IsNullOrWhiteSpace($releaseNotes)) {
+              throw "Release notes are empty for version $version."
+          }
+
+          $notesPath = Join-Path `
+              $env:RUNNER_TEMP `
+              "release-notes.md"
+
+          Set-Content `
+              -LiteralPath $notesPath `
+              -Value $releaseNotes `
+              -Encoding UTF8
 
           gh release create `
-            $tag `
-            ".\$plugin" `
-            --verify-tag `
-            --title "HideLyric $tag" `
-            --generate-notes
+              $tag `
+              ".\$plugin" `
+              --verify-tag `
+              --title "HideLyric $tag" `
+              --notes-file $notesPath

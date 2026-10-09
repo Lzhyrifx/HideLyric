@@ -224,7 +224,7 @@ plugin.onConfig(() => {
 
     title.innerHTML = `
     HideLyric<br>
-    v1.0.2 by 
+    v1.0.3 by 
     <span 
         id="githubLink"
         style="
@@ -748,8 +748,8 @@ async function pingRust() {
             false;
 
 
-        // 输出错误日志
-        console.warn(
+        // 启动如果只出现一次是正常现象
+        console.log(
             "[HideLyric] Rust ping 失败:",
             error
         );
@@ -1218,7 +1218,6 @@ function checkMeaninglessLyric() {
             ".NoLyricContainer_n1wmw8cp .content > span"
         );
 
-
     const texts =
         [];
 
@@ -1270,7 +1269,6 @@ function checkMeaninglessLyric() {
         }
     }
 
-
     if (texts.length === 0) {
 
         updateMeaninglessLyricDetected(false);
@@ -1300,9 +1298,19 @@ function checkMeaninglessLyric() {
         [...normalizedText].length;
 
 
+    const ScrollableLyric =
+        !!document.querySelector(
+            '[class*="ScrollableLyricDisplayContainer_spqfaoe"]'
+        );
+
+
     const detected =
         pureMusicKeywordDetected ||
-        length < meaninglessThreshold;
+        length < meaninglessThreshold ||
+        (
+            length >= meaninglessThreshold &&
+            !ScrollableLyric
+        );
 
 
     updateMeaninglessLyricDetected(
