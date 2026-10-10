@@ -6,7 +6,7 @@
 <img src="./dist/preview.png" width="300">
 
 ### 隐藏桌面歌词程序使用Rust编写
-### release的.plugin文件由GitHub Actions从公开源码编译
+### plugin文件由GitHub Actions从公开源码打包
 
 
 ## 使用方法
