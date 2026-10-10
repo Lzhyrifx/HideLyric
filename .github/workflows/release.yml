@@ -5,7 +5,6 @@ on:
     tags:
       - "v*"
 
-
 permissions:
   contents: write
 
@@ -17,16 +16,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-
 
       - name: Check version
         shell: pwsh
         run: |
           $manifest =
-              Get-Content ".\manifest.json" -Raw |
+              Get-Content ".\dist\manifest.json" -Raw |
               ConvertFrom-Json
 
           $manifestVersion =
@@ -40,71 +37,57 @@ jobs:
 
           if ($tagVersion -ne $expectedTag) {
               Write-Error `
-                "版本不一致:manifest=$expectedTag, tag=$tagVersion"
+                "版本不一致: manifest=$expectedTag, tag=$tagVersion"
 
               exit 1
           }
 
-          Write-Host `
-            "版本检查通过:$tagVersion"
-
+          Write-Host "版本检查通过: $tagVersion"
 
       - name: Build Release
         run: cargo build --release
 
-
       - name: Prepare plugin
         shell: pwsh
         run: |
-          New-Item `
-            -ItemType Directory `
-            -Force `
-            ".\plugin"
+          foreach ($file in @(
+              ".\dist\manifest.json",
+              ".\dist\main.js",
+              ".\dist\preview.png"
+          )) {
+              if (!(Test-Path $file -PathType Leaf)) {
+                  throw "插件文件不存在: $file"
+              }
+          }
 
-          Copy-Item `
-            ".\manifest.json" `
-            ".\plugin\manifest.json" `
-            -Force
-
-          Copy-Item `
-            ".\main.js" `
-            ".\plugin\main.js" `
-            -Force
-
-          Copy-Item `
-            ".\preview.png" `
-            ".\plugin\preview.png" `
-            -Force
 
           Copy-Item `
             ".\target\release\HideLyric.exe" `
-            ".\plugin\HideLyric.exe" `
+            ".\dist\HideLyric.exe" `
             -Force
-
 
       - name: Package plugin
         shell: pwsh
         run: |
-          $tag =
-              $env:GITHUB_REF_NAME
+          $tag = $env:GITHUB_REF_NAME
 
-          $zip =
-              "HideLyric-$tag.zip"
-
-          $plugin =
-              "HideLyric-$tag.plugin"
+          $zip = "HideLyric-$tag.zip"
+          $plugin = "HideLyric-$tag.plugin"
 
           Compress-Archive `
-            -Path ".\plugin\*" `
+            -Path ".\dist\*" `
             -DestinationPath ".\$zip" `
             -Force
 
-          Rename-Item `
-            ".\$zip" `
-            ".\$plugin"
+          if (Test-Path ".\$plugin") {
+              Remove-Item ".\$plugin" -Force
+          }
 
-          Write-Host `
-            "生成插件: $plugin"
+          Rename-Item `
+            -LiteralPath ".\$zip" `
+            -NewName $plugin
+
+          Write-Host "生成插件: $plugin"
 
       - name: Create Release
         shell: pwsh
@@ -115,7 +98,6 @@ jobs:
           $version = $tag -replace '^v', ''
 
           $plugin = "HideLyric-$tag.plugin"
-
           $changelogPath = ".\CHANGELOG.md"
 
           if (!(Test-Path $changelogPath)) {

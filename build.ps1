@@ -1,134 +1,61 @@
 $ErrorActionPreference = "Stop"
 
 
-$projectDir =
-$PSScriptRoot
+$projectDir = $PSScriptRoot
 
 
-$pluginDir =
-Join-Path $projectDir "plugin"
+$distDir = Join-Path $projectDir "dist"
 
 
-$releaseDir =
-Join-Path $projectDir "release"
+$releaseDir = Join-Path $projectDir "release"
 
 
-$manifestSource =
-Join-Path $projectDir "manifest.json"
+$exeSource = Join-Path $projectDir "target\release\HideLyric.exe"
 
 
-$mainJsSource =
-Join-Path $projectDir "main.js"
+$manifestPath = Join-Path $distDir "manifest.json"
+$mainJsPath = Join-Path $distDir "main.js"
+$previewPath = Join-Path $distDir "preview.png"
+$exeDestination = Join-Path $distDir "HideLyric.exe"
 
 
-$exeSource =
-Join-Path $projectDir "target\release\HideLyric.exe"
-
-
-if (!(Test-Path $manifestSource)) {
-
-    Write-Error "manifest.json not found: $manifestSource"
-
-    exit 1
+if (!(Test-Path $distDir -PathType Container)) {
+    throw "dist directory not found: $distDir"
 }
 
 
-if (!(Test-Path $mainJsSource)) {
-
-    Write-Error "main.js not found: $mainJsSource"
-
-    exit 1
+foreach ($path in @($manifestPath, $mainJsPath, $previewPath)) {
+    if (!(Test-Path $path -PathType Leaf)) {
+        throw "Plugin file not found: $path"
+    }
 }
 
 
-if (!(Test-Path $exeSource)) {
-
-    Write-Error "HideLyric.exe not found: $exeSource"
-
-    exit 1
+if (!(Test-Path $exeSource -PathType Leaf)) {
+    throw "HideLyric.exe not found: $exeSource. Run cargo build --release first."
 }
 
 
-Write-Host "Updating plugin folder..."
-
-
-
-if (!(Test-Path $pluginDir)) {
-
-    New-Item `
-        -ItemType Directory `
-        -Path $pluginDir |
-            Out-Null
-}
-
-
-
-Get-ChildItem `
-    $pluginDir `
-    -Force |
-        Remove-Item `
-        -Recurse `
-        -Force
-
-
-
-Copy-Item `
-    $manifestSource `
-    $pluginDir `
-    -Force
-
-
-Copy-Item `
-    $mainJsSource `
-    $pluginDir `
-    -Force
-
-
-Copy-Item `
-    $exeSource `
-    $pluginDir `
-    -Force
-
-
-
-$previewSource =
-Join-Path $projectDir "preview.png"
-
-
-if (Test-Path $previewSource) {
-
-    Copy-Item `
-        $previewSource `
-        $pluginDir `
-        -Force
-}
-
-
-$manifestPath =
-Join-Path $pluginDir "manifest.json"
-
-
-$manifest =
-Get-Content `
-        $manifestPath `
-        -Raw |
+$manifest = Get-Content $manifestPath -Raw |
         ConvertFrom-Json
 
-
-$version =
-$manifest.version
+$version = $manifest.version
 
 
 if ([string]::IsNullOrWhiteSpace($version)) {
-
-    Write-Error "Unable to read version from manifest.json"
-
-    exit 1
+    throw "Unable to read version from: $manifestPath"
 }
 
 
-if (!(Test-Path $releaseDir)) {
+Write-Host "Updating HideLyric.exe..."
 
+Copy-Item `
+    -LiteralPath $exeSource `
+    -Destination $exeDestination `
+    -Force
+
+
+if (!(Test-Path $releaseDir -PathType Container)) {
     New-Item `
         -ItemType Directory `
         -Path $releaseDir |
@@ -136,44 +63,27 @@ if (!(Test-Path $releaseDir)) {
 }
 
 
-$zipPath =
-Join-Path `
-        $releaseDir `
-        "HideLyric-v$version.zip"
-
-
-$pluginPath =
-Join-Path `
-        $releaseDir `
-        "HideLyric-v$version.plugin"
-
+$zipPath = Join-Path $releaseDir "HideLyric-v$version.zip"
+$pluginPath = Join-Path $releaseDir "HideLyric-v$version.plugin"
 
 
 Remove-Item `
-    $zipPath `
+    -LiteralPath $zipPath, $pluginPath `
     -Force `
     -ErrorAction SilentlyContinue
 
-
-Remove-Item `
-    $pluginPath `
-    -Force `
-    -ErrorAction SilentlyContinue
-
-
-
-Write-Host "Packaging plugin..."
+Write-Host "Packaging plugin v$version..."
 
 
 Compress-Archive `
-    -Path "$pluginDir\*" `
+    -Path "$distDir\*" `
     -DestinationPath $zipPath `
     -Force
 
 
-Rename-Item `
-    $zipPath `
-    $pluginPath `
+Move-Item `
+    -LiteralPath $zipPath `
+    -Destination $pluginPath `
     -Force
 
 

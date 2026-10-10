@@ -33,7 +33,7 @@ jobs:
         run: |
           Copy-Item `
             ".\target\release\HideLyric.exe" `
-            ".\HideLyric.exe" `
+            ".\dist\HideLyric.exe" `
             -Force
 
       - name: Commit executable
@@ -42,7 +42,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add HideLyric.exe
+          git add dist/HideLyric.exe
 
           if (git diff --cached --quiet) {
             exit 0

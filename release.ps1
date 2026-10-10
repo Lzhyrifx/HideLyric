@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $manifestPath =
-Join-Path $PSScriptRoot "manifest.json"
+Join-Path $PSScriptRoot "dist\manifest.json"
 
 if (!(Test-Path $manifestPath)) {
 

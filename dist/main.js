@@ -19,10 +19,6 @@ const ncmMajorVersion =
         10
     );
 
-console.log(
-    `[HideLyric] 网易云版本: ${ncmVersion}`
-);
-
 
 
 // Rust
@@ -729,6 +725,7 @@ window.getCurrentSong = getCurrentSong;
 // Rust daemon: 我已?!启动?!
 let rustReady = false;
 
+
 // Rust daemon 初始化Promise
 let rustInitPromise = null;
 
@@ -1382,43 +1379,42 @@ function checkMeaninglessLyric() {
 }
 
 
-/**
- * 网易云 2.x 歌词 API 检测状态
- */
-
 // 当前已检测的歌曲 ID
 let apiLyricSongId = null;
 
+
 // 当前歌曲的歌词缓存
-// null 表示尚未取得结果，空字符串表示没有歌词
+// null表示尚未取得结果,空字符串表示没有歌词
 let apiLyricText = null;
 
-// 已经发起请求的歌曲 ID
+
+// 已经发起请求的歌曲ID
 let apiLyricRequestedSongId = null;
 
-// 请求序号，用于忽略过期请求
+
+// 请求序号,用于忽略过期请求
 let apiLyricRequestToken = 0;
+
 
 // 请求失败后的重试时间
 let apiLyricRetryAfter = 0;
 
+
 // 上次统计歌词时使用的阈值
 let apiLyricLastEvaluatedThreshold = null;
+
 
 // 去除歌词时间戳和作词、作曲等元数据
 function normalizeApiLyric(lyric) {
     return String(lyric || "")
         .split(/\r?\n/)
         .filter(line => {
-            // 排除 API 返回的作词、作曲等元数据行
             return !/^\s*\{.*"c"\s*:/.test(line);
         })
         .filter(line => {
-            // 排除标准 LRC 元数据标签
             return !/^\s*\[(?:ti|ar|al|by|re|ve|offset|length):/i.test(line);
         })
         .map(line => {
-            // 去除每行开头的一个或多个时间戳
             return line
                 .replace(
                     /^\s*(?:\[\d{1,2}:\d{2}(?:[.:]\d+)?\]\s*)+/,
@@ -1431,7 +1427,7 @@ function normalizeApiLyric(lyric) {
         .replace(/[\s，,]/g, "");
 }
 
-// 使用 API 返回的歌词进行判断
+
 function evaluateApiLyric(lyric) {
     const normalizedText =
         normalizeApiLyric(lyric);
@@ -1442,7 +1438,6 @@ function evaluateApiLyric(lyric) {
     const length =
         [...normalizedText].length;
 
-    // 统计 LRC 时间戳行数
     const lrcTimedLineCount =
         String(lyric || "")
             .split(/\r?\n/)
@@ -1463,9 +1458,7 @@ function evaluateApiLyric(lyric) {
 }
 
 
-// 网易云 2.x：通过当前歌曲 ID 获取歌词
 async function checkMeaninglessLyricV2() {
-
     const song = getCurrentSong();
 
     window.__hideLyricLastSong = song ? { id: song.id, name: song.name } : null;
@@ -1477,7 +1470,6 @@ async function checkMeaninglessLyricV2() {
 
     const songId =
         String(song.id);
-    // 只有歌曲 ID 变化时，才执行切歌处理
     if (apiLyricSongId !== songId) {
 
         console.log("[HideLyric] 检测到切歌:", {
@@ -1493,18 +1485,12 @@ async function checkMeaninglessLyricV2() {
 
         apiLyricRetryAfter = 0;
 
-        // 重置阈值检测缓存
         apiLyricLastEvaluatedThreshold = null;
 
-        // 让之前尚未完成的请求失效
         apiLyricRequestToken++;
     }
 
-    // 已有缓存，直接重新判断
-    // 不重复请求网络，也能响应阈值配置变化
     if (apiLyricText !== null) {
-
-        // 只有阈值变化时，才重新统计缓存歌词
         if (
             apiLyricLastEvaluatedThreshold !==
             meaninglessThreshold
@@ -1515,12 +1501,12 @@ async function checkMeaninglessLyricV2() {
         return;
     }
 
-    // 该歌曲已经发起过请求，等待结果
+
     if (apiLyricRequestedSongId === songId) {
         return;
     }
 
-    // 请求失败时，避免每 100ms 重试
+
     if (Date.now() < apiLyricRetryAfter) {
         return;
     }
@@ -1530,12 +1516,13 @@ async function checkMeaninglessLyricV2() {
     const requestToken =
         apiLyricRequestToken;
 
+    /*
     console.log(
         "[HideLyric] 正在请求 2.x 歌词 API",
         song.name,
         "ID:",
         songId
-    );
+    );*/
 
     const url = new URL(
         "https://music.163.com/api/song/lyric/v1"
@@ -1577,68 +1564,6 @@ async function checkMeaninglessLyricV2() {
         const data =
             await response.json();
 
-        // 检查原歌词中有没有滚动所需的时间信息
-        function inspectLyricTiming(lyric) {
-            const lines = String(lyric || "")
-                .split(/\r?\n/)
-                .map(line => line.trim())
-                .filter(Boolean);
-
-            // 排除作词、作曲等 JSON 元数据
-            const metadataLines = [];
-            const contentLines = [];
-
-            for (const line of lines) {
-                try {
-                    const item = JSON.parse(line);
-
-                    if (
-                        item &&
-                        typeof item === "object" &&
-                        Array.isArray(item.c)
-                    ) {
-                        metadataLines.push(line);
-                        continue;
-                    }
-                } catch (_) {
-                    // 普通歌词不是 JSON，继续检查时间戳
-                }
-
-                contentLines.push(line);
-            }
-
-            // 普通 LRC 行时间戳，例如 [00:12.500]
-            const lrcTimedLines = contentLines.filter(line =>
-                /^\[(?:\d{1,3}):\d{2}(?:[.:]\d{1,3})?\]/.test(line)
-            );
-
-            // 网易云逐字歌词 YRC 行时间戳，例如 [16210,3460]
-            const yrcTimedLines = contentLines.filter(line =>
-                /^\[\d+,\d+\]/.test(line)
-            );
-
-            return {
-                totalLines: lines.length,
-                metadataLineCount: metadataLines.length,
-                contentLineCount: contentLines.length,
-                lrcTimedLineCount: lrcTimedLines.length,
-                yrcTimedLineCount: yrcTimedLines.length,
-                untimedLineCount:
-                    contentLines.length -
-                    lrcTimedLines.length -
-                    yrcTimedLines.length,
-                hasTimedLyrics:
-                    lrcTimedLines.length > 0 ||
-                    yrcTimedLines.length > 0,
-                preview: contentLines.slice(0, 5)
-            };
-        }
-
-        console.log("[HideLyric] 歌词时间戳诊断", {
-            songName: song.name,
-            songId,
-            ...inspectLyricTiming(data.lrc?.lyric || "")
-        });
 
         if (
             data.code != null &&
@@ -1649,12 +1574,10 @@ async function checkMeaninglessLyricV2() {
             );
         }
 
-        // 忽略切歌前发出的过期请求
         if (requestToken !== apiLyricRequestToken) {
             return;
         }
 
-        // 再确认当前歌曲仍然是请求对应的歌曲
         const latestSong =
             getCurrentSong();
 
@@ -1662,10 +1585,10 @@ async function checkMeaninglessLyricV2() {
             return;
         }
 
-        // 没有歌词时缓存空字符串
         apiLyricText =
             data.lrc?.lyric ?? "";
 
+        /*
         console.log(
             "[HideLyric] 2.x 歌词获取完成:",
             song.name,
@@ -1678,12 +1601,11 @@ async function checkMeaninglessLyricV2() {
         console.log(
             "[HideLyric] 2.x 歌词内容：\n",
             apiLyricText
-        );
+        );*/
 
         evaluateApiLyric(apiLyricText);
 
     } catch (error) {
-        // 忽略已经过期的请求
         if (requestToken !== apiLyricRequestToken) {
             return;
         }
@@ -1700,12 +1622,11 @@ async function checkMeaninglessLyricV2() {
     }
 }
 
+
 let lyricCheckDebugLogged = false;
 
 
-
 function runMeaninglessLyricCheck() {
-
     if (!lyricCheckDebugLogged) {
         console.log(
             "[HideLyric] 检测调度已执行",
@@ -1714,9 +1635,9 @@ function runMeaninglessLyricCheck() {
                 ncmMajorVersion
             }
         );
-
         lyricCheckDebugLogged = true;
     }
+
 
     if (ncmMajorVersion === 2) {
         void checkMeaninglessLyricV2();
@@ -1725,23 +1646,26 @@ function runMeaninglessLyricCheck() {
     }
 }
 
+
 rustInitPromise = ensureRust();
 if (window.__hideLyricmeaninglessLyricTimer) {
     clearInterval(window.__hideLyricmeaninglessLyricTimer);
 }
 
+
 window.__hideLyricTickCount = 0;
+
 
 window.__hideLyricmeaninglessLyricTimer = setInterval(() => {
     window.__hideLyricTickCount++;
     runMeaninglessLyricCheck();
 }, CHECK_INTERVAL);
 
+
 runMeaninglessLyricCheck();
 
 
 if (window.__hideLyricHeartbeatTimer) {
-
     clearInterval(
         window.__hideLyricHeartbeatTimer
     );
@@ -1757,7 +1681,6 @@ window.__hideLyricHeartbeatTimer =
 
             // Rust正常
             if (alive) {
-
                 return;
             }
 
