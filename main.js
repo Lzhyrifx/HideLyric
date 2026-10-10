@@ -1335,11 +1335,7 @@ function checkMeaninglessLyric() {
 }
 
 
-/**
- * 网易云 2.x：通过 LibLyric 获取并检测当前歌曲歌词
- */
-
-// 当前正在检测的歌曲 ID
+// 当前正在检测的歌曲ID
 let v2CurrentSongId = null;
 
 // 避免同时执行多个当前歌曲查询
@@ -1348,49 +1344,32 @@ let v2CheckRunning = false;
 // 缓存已经取得的歌词统计结果
 const v2LyricStatsCache = new Map();
 
-// 正在请求歌词的歌曲 ID
+// 正在请求歌词的歌曲ID
 const v2LyricRequests = new Set();
 
-
-// 获取当前播放歌曲信息
+// 获取当前播放歌曲信息（网易云 2.x）
 async function getCurrentPlayingSongV2() {
     const ncm = window.betterncm?.ncm;
 
-    if (!ncm) {
+    if (typeof ncm?.getPlayingSong !== "function") {
         return null;
     }
 
-    let playing = null;
-
-    // 优先尝试直接获取
     try {
-        if (typeof ncm.getPlayingSong === "function") {
-            playing = await ncm.getPlayingSong();
-        }
-    } catch (_) {
-        // 继续尝试备用接口
+        const playing = await ncm.getPlayingSong();
+
+        return playing?.data?.id
+            ? playing.data
+            : null;
+
+    } catch (error) {
+        console.warn(
+            "[HideLyric] 获取当前播放歌曲信息失败",
+            error
+        );
+
+        return null;
     }
-
-    // 备用方式：通过 findApiFunction 获取
-    if (
-        !playing?.data?.id &&
-        typeof ncm.findApiFunction === "function"
-    ) {
-        try {
-            const result = ncm.findApiFunction("getPlaying");
-
-            if (result && typeof result[0] === "function") {
-                playing = await result[0].call(result[1]);
-            }
-        } catch (error) {
-            console.warn(
-                "[HideLyric] 获取当前歌曲信息失败",
-                error
-            );
-        }
-    }
-
-    return playing?.data?.id ? playing.data : null;
 }
 
 
@@ -1402,14 +1381,14 @@ async function fetchV2LyricStats(songId) {
         typeof lib?.getLyricData !== "function" ||
         typeof lib?.parseLyric !== "function"
     ) {
-        throw new Error("LibLyric 尚未加载或 API 不可用");
+        throw new Error("LibLyric尚未加载或API不可用");
     }
 
     const data = await lib.getLyricData(Number(songId));
 
     if (data?.code !== 200) {
         throw new Error(
-            `歌词请求失败，返回 code: ${data?.code}`
+            `歌词请求失败,返回code: ${data?.code}`
         );
     }
 
@@ -1432,8 +1411,7 @@ async function fetchV2LyricStats(songId) {
         .replace(/[\s，,]/gu, "");
 
     return {
-        // 歌词全文，保留换行，方便人工检查
-        lyrics: contentLines.join("\n"),
+        lyrics: contentLines.join(" "),
 
         // 检测统计数据
         normalizedLength: Array.from(normalizedText).length,
@@ -1461,7 +1439,6 @@ function applyV2LyricStats(songId, stats) {
 }
 
 
-// 网易云 2.x 检测入口
 async function checkMeaninglessLyricV2() {
     if (v2CheckRunning) {
         return;
@@ -1488,11 +1465,11 @@ async function checkMeaninglessLyricV2() {
             v2CurrentSongId = songId;
 
             updateMeaninglessLyricDetected(false);
-
+            /*
             console.log("[HideLyric] 当前歌曲已变化", {
                 songId,
                 songName: song.name
-            });
+            });*/
         }
 
         const cachedStats = v2LyricStatsCache.get(songId);
@@ -1521,12 +1498,12 @@ async function checkMeaninglessLyricV2() {
 
                     v2LyricStatsCache.delete(oldestSongId);
                 }
-
+                /*
                 console.log("[HideLyric] 歌词统计完成", {
                     songId,
                     songName: song.name,
                     ...stats
-                });
+                });*/
 
                 // 只应用当前歌曲的结果
                 applyV2LyricStats(songId, stats);
