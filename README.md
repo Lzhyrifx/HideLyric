@@ -6,7 +6,7 @@
 <img src="./dist/preview.png" width="300">
 
 ### 隐藏桌面歌词程序使用Rust编写
-### release的plugin文件由.GitHub Actions从公开源码编译
+### release的.plugin文件由GitHub Actions从公开源码编译
 
 
 ## 使用方法
@@ -25,6 +25,4 @@
 
 ### 已支持网易云3.x版本以及2.x版本且无需前置库
 
-### 更新日志
-
-[**CHANGELOG.md**](./CHANGELOG.md)
+### 更新日志:[**CHANGELOG.md**](./CHANGELOG.md)
