@@ -10,6 +10,7 @@
 
 
 ## 使用方法
+
 <!--
 ### 通过插件商店安装
 
@@ -17,6 +18,7 @@
 - 在插件商店中找到并安装HideLyric 
 - 根据提示重启网易云音乐
 -->
+
 ### 手动安装
 - [安装Betterncm插件](https://github.com/std-microblock/BetterNCM-Installer/releases/latest)
 - 在 [Release页面](https://github.com/Lzhyrifx/HideLyric/releases/latest)下载最新版本 
