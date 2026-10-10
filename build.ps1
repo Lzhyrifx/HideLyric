@@ -22,7 +22,7 @@ Join-Path $projectDir "main.js"
 
 
 $exeSource =
-Join-Path $projectDir "HideLyric.exe"
+Join-Path $projectDir "target\release\HideLyric.exe"
 
 
 if (!(Test-Path $manifestSource)) {

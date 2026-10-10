@@ -9,6 +9,15 @@ use std::thread;
 use std::time::{Duration, Instant};
 use windows::core::w;
 use windows::Win32::Foundation::HWND;
+use windows::Win32::Foundation::CloseHandle;
+
+use windows::Win32::System::Diagnostics::ToolHelp::{
+    CreateToolhelp32Snapshot,
+    Process32FirstW,
+    Process32NextW,
+    PROCESSENTRY32W,
+    TH32CS_SNAPPROCESS,
+};
 use windows::Win32::Graphics::Gdi::{
     CreateRectRgn,
     SetWindowRgn,
@@ -68,6 +77,64 @@ impl ServerState {
     }
 }
 
+// ==================================================
+// 检测 cloudmusic.exe 是否正在运行
+// ==================================================
+
+fn is_cloudmusic_running() -> bool {
+    unsafe {
+        let snapshot = match CreateToolhelp32Snapshot(
+            TH32CS_SNAPPROCESS,
+            0,
+        ) {
+            Ok(snapshot) => snapshot,
+
+            Err(_) => {
+                // 检测失败时不误判为进程已退出
+                return true;
+            }
+        };
+
+        let mut entry = PROCESSENTRY32W {
+            dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+            ..Default::default()
+        };
+
+        let mut found = false;
+
+        if Process32FirstW(
+            snapshot,
+            &mut entry,
+        ).is_ok() {
+            loop {
+                let process_name =
+                    String::from_utf16_lossy(
+                        &entry.szExeFile,
+                    );
+
+                if process_name
+                    .trim_end_matches('\0')
+                    .eq_ignore_ascii_case("cloudmusic.exe")
+                {
+                    found = true;
+                    break;
+                }
+
+                if Process32NextW(
+                    snapshot,
+                    &mut entry,
+                ).is_err()
+                {
+                    break;
+                }
+            }
+        }
+
+        let _ = CloseHandle(snapshot);
+
+        found
+    }
+}
 
 // 查找目标窗口
 fn find_lyrics_window() -> Option<HWND> {
@@ -398,21 +465,45 @@ fn run_daemon() {
     let state =
         Arc::new(ServerState::new());
 
+    // ==================================================
+    // 心跳与 cloudmusic.exe 进程监控线程
+    // ==================================================
 
-    // 心跳监控线程
     {
-        let state =
-            Arc::clone(&state);
+        let state = Arc::clone(&state);
 
         thread::spawn(move || {
+
+            // 是否检测到过网易云进程
+            let mut cloudmusic_seen = false;
+
             loop {
                 thread::sleep(
-                    Duration::from_secs(1)
+                    Duration::from_millis(200)
                 );
+
+                // ------------------------------------------
+                // 检测网易云进程
+                // ------------------------------------------
+
+                if is_cloudmusic_running() {
+                    cloudmusic_seen = true;
+
+                } else if cloudmusic_seen {
+                    println!(
+                        "[HideLyric] 检测到 cloudmusic.exe 已退出，daemon退出"
+                    );
+
+                    std::process::exit(0);
+                }
+
+                // ------------------------------------------
+                // 检测 JS 心跳超时
+                // ------------------------------------------
 
                 if state.should_exit() {
                     println!(
-                        "[HideLyric] JS心跳超时,daemon退出"
+                        "[HideLyric] JS心跳超时，daemon退出"
                     );
 
                     std::process::exit(0);
