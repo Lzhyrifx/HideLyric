@@ -77,10 +77,8 @@ impl ServerState {
     }
 }
 
-// ==================================================
-// 检测 cloudmusic.exe 是否正在运行
-// ==================================================
 
+// 检测 cloudmusic.exe 是否正在运行
 fn is_cloudmusic_running() -> bool {
     unsafe {
         let snapshot = match CreateToolhelp32Snapshot(
@@ -90,7 +88,6 @@ fn is_cloudmusic_running() -> bool {
             Ok(snapshot) => snapshot,
 
             Err(_) => {
-                // 检测失败时不误判为进程已退出
                 return true;
             }
         };
@@ -465,10 +462,8 @@ fn run_daemon() {
     let state =
         Arc::new(ServerState::new());
 
-    // ==================================================
-    // 心跳与 cloudmusic.exe 进程监控线程
-    // ==================================================
 
+    // 心跳与 cloudmusic.exe 进程监控线程
     {
         let state = Arc::clone(&state);
 
@@ -490,22 +485,12 @@ fn run_daemon() {
                     cloudmusic_seen = true;
 
                 } else if cloudmusic_seen {
-                    println!(
-                        "[HideLyric] 检测到 cloudmusic.exe 已退出，daemon退出"
-                    );
-
                     std::process::exit(0);
                 }
 
-                // ------------------------------------------
+
                 // 检测 JS 心跳超时
-                // ------------------------------------------
-
                 if state.should_exit() {
-                    println!(
-                        "[HideLyric] JS心跳超时，daemon退出"
-                    );
-
                     std::process::exit(0);
                 }
             }
