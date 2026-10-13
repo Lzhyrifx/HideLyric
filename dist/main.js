@@ -9,26 +9,19 @@ console.log(
 );
 
 // 获取网易云音乐客户端版本
-const ncmVersion =
-    betterncm.ncm.getNCMVersion();
+const ncmVersion = betterncm.ncm.getNCMVersion();
 
 // 获取主版本号
-const ncmMajorVersion =
-    Number.parseInt(
-        ncmVersion.split(".")[0],
-        10
-    );
+const ncmMajorVersion = Number.parseInt(ncmVersion.split(".")[0], 10);
 
 
 
 // Rust
-const RUST_EXE =
-    `${plugin.pluginPath}\\HideLyric.exe`;
+const RUST_EXE = `${plugin.pluginPath}\\HideLyric.exe`;
 
 
 // Rust daemon 地址
-const RUST_URL =
-    "http://127.0.0.1:10086";
+const RUST_URL = "http://127.0.0.1:10086";
 
 
 // 检查间隔
@@ -51,21 +44,27 @@ let stateClearDelay =
     );
 
 
-// 插件配置
+// 自动隐藏无意义歌词
 let autoHideEnabled =
     plugin.getConfig(
         "enabled",
         true
     );
 
+
+// 暂停歌曲时隐藏桌面歌词
+let pauseHideEnabled =
+    plugin.getConfig(
+        "hideWhenPaused",
+        true
+    );
+
+
 plugin.onConfig(() => {
 
-    const container =
-        document.createElement("div");
-    container.id =
-        "HideLyricSettings";
-    const style =
-        document.createElement("style");
+    const container = document.createElement("div");
+    container.id = "HideLyricSettings";
+    const style = document.createElement("style");
 
 
     style.textContent = `
@@ -230,13 +229,12 @@ plugin.onConfig(() => {
 
 
     // 插件标题
-    const title =
-        document.createElement("div");
+    const title = document.createElement("div");
 
 
     title.innerHTML = `
     HideLyric<br>
-    v1.1.0 by 
+    v1.1.1 by 
     <span 
         id="githubLink"
         style="
@@ -263,118 +261,57 @@ plugin.onConfig(() => {
     );
 
 
-    title.style.fontSize =
-        "18px";
-
-
-    title.style.fontWeight =
-        "normal";
-
-
-    title.style.marginBottom =
-        "12px";
-
-
-    title.style.whiteSpace =
-        "normal";
-
-
+    title.style.fontSize = "18px";
+    title.style.fontWeight = "normal";
+    title.style.marginBottom = "12px";
+    title.style.whiteSpace = "normal";
     container.appendChild(title);
 
 
-    // 功能开关
-    const option =
-        document.createElement("div");
+    const option = document.createElement("div");
+    option.style.padding = "4px 0";
 
 
-    option.style.padding =
-        "4px 0";
+    const label = document.createElement("label");
+    label.style.display = "flex";
+    label.style.alignItems = "center";
+    label.style.cursor = "pointer";
 
 
-    const label =
-        document.createElement("label");
+    const switchBox = document.createElement("label");
+    switchBox.className = "hly-switch";
 
 
-    label.style.display =
-        "flex";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = autoHideEnabled;
 
 
-    label.style.alignItems =
-        "center";
+    const track = document.createElement("span");
+    track.className = "track";
 
 
-    label.style.cursor =
-        "pointer";
+    const thumb = document.createElement("span");
+    thumb.className = "thumb";
 
 
-    const switchBox =
-        document.createElement("label");
-
-
-    switchBox.className =
-        "hly-switch";
-
-
-    const checkbox =
-        document.createElement("input");
-
-
-    checkbox.type =
-        "checkbox";
-
-
-    checkbox.checked =
-        autoHideEnabled;
-
-
-    const track =
-        document.createElement("span");
-
-
-    track.className =
-        "track";
-
-
-    const thumb =
-        document.createElement("span");
-
-
-    thumb.className =
-        "thumb";
-
-
-    switchBox.appendChild(
-        checkbox
-    );
-
-
-    switchBox.appendChild(
-        track
-    );
-
-
-    switchBox.appendChild(
-        thumb
-    );
+    switchBox.appendChild(checkbox);
+    switchBox.appendChild(track);
+    switchBox.appendChild(thumb);
 
 
 
-    const text =
-        document.createElement("span");
+    const text = document.createElement("span");
 
 
-    text.textContent =
-        "自动隐藏无歌词桌面歌词";
+    text.textContent = "自动隐藏无歌词桌面歌词";
 
 
     checkbox.addEventListener(
         "change",
         () => {
-
-
             autoHideEnabled =
                 checkbox.checked;
-
 
 
             plugin.setConfig(
@@ -383,54 +320,70 @@ plugin.onConfig(() => {
             );
 
 
-
-            if (!autoHideEnabled) {
-
-
-                shouldHide =
-                    false;
-
-
-                requestShow();
-
-
-                return;
-            }
-
-
             updateLyricsWindowState();
 
         }
     );
 
 
-    text.style.marginLeft =
-        "10px";
+    text.style.marginLeft = "10px";
+    label.appendChild(switchBox);
+    label.appendChild(text);
+    option.appendChild(label);
+    container.appendChild(option);
 
 
-    label.appendChild(
-        switchBox
-    );
+    const pauseOption = document.createElement("div");
+    pauseOption.style.padding = "4px 0";
 
 
-    label.appendChild(
-        text
-    );
+    const pauseLabel = document.createElement("label");
+    pauseLabel.style.display = "flex";
+    pauseLabel.style.alignItems = "center";
+    pauseLabel.style.cursor = "pointer";
 
 
-    option.appendChild(
-        label
-    );
+    const pauseSwitchBox = document.createElement("label");
+    pauseSwitchBox.className = "hly-switch";
 
 
-    container.appendChild(
-        option
-    );
+    const pauseCheckbox = document.createElement("input");
+    pauseCheckbox.type = "checkbox";
+    pauseCheckbox.checked = pauseHideEnabled;
+
+
+    const pauseTrack = document.createElement("span");
+    pauseTrack.className = "track";
+
+
+    const pauseThumb = document.createElement("span");
+    pauseThumb.className = "thumb";
+
+
+    pauseSwitchBox.appendChild(pauseCheckbox);
+    pauseSwitchBox.appendChild(pauseTrack);
+    pauseSwitchBox.appendChild(pauseThumb);
+
+
+    const pauseText = document.createElement("span");
+    pauseText.textContent = "暂停歌曲时隐藏桌面歌词";
+    pauseText.style.marginLeft = "10px";
+
+
+    pauseCheckbox.addEventListener("change", () => {
+        pauseHideEnabled = pauseCheckbox.checked;
+        plugin.setConfig("hideWhenPaused", pauseHideEnabled);
+        updateLyricsWindowState();
+    });
+
+    pauseLabel.appendChild(pauseSwitchBox);
+    pauseLabel.appendChild(pauseText);
+    pauseOption.appendChild(pauseLabel);
+    container.appendChild(pauseOption);
 
 
     // 切歌检查延迟
-    const delayOption =
-        document.createElement("div");
+    const delayOption = document.createElement("div");
 
 
     delayOption.innerHTML = `
@@ -480,59 +433,38 @@ plugin.onConfig(() => {
 `;
 
 
-    const delayInput =
-        delayOption.querySelector(
-            "#stateClearDelayInput"
-        );
+    const delayInput = delayOption.querySelector("#stateClearDelayInput");
 
 
     delayInput.addEventListener(
         "change",
         () => {
 
-            let value =
-                Number(
-                    delayInput.value
-                );
+            let value = Number(delayInput.value);
 
 
-            if (
-                Number.isNaN(value)
-            ) {
-
+            if (Number.isNaN(value)) {
                 value = 200;
             }
 
 
-            value =
-                Math.max(
-                    0,
-                    Math.min(
-                        2000,
-                        value
-                    )
-                );
+            value = Math.max(0,
+                    Math.min(2000, value));
 
 
-            stateClearDelay =
-                value;
+            stateClearDelay = value;
 
 
-            delayInput.value =
-                value;
+            delayInput.value = value;
 
 
-            plugin.setConfig(
-                "stateClearDelay",
-                value
-            );
+            plugin.setConfig("stateClearDelay", value);
         }
     );
 
 
     // 无意义字符数阈值
-    const lengthOption =
-        document.createElement("div");
+    const lengthOption = document.createElement("div");
 
 
     lengthOption.innerHTML = `
@@ -578,10 +510,7 @@ plugin.onConfig(() => {
 `;
 
 
-    const lengthInput =
-        lengthOption.querySelector(
-            "#meaninglessThresholdInput"
-        );
+    const lengthInput = lengthOption.querySelector("#meaninglessThresholdInput");
 
 
     lengthInput.addEventListener(
@@ -589,42 +518,25 @@ plugin.onConfig(() => {
         () => {
 
 
-            let value =
-                Number(
-                    lengthInput.value
-                );
+            let value = Number(lengthInput.value);
 
 
-            if (
-                Number.isNaN(value)
-            ) {
-
+            if (Number.isNaN(value)) {
                 value = 50;
             }
 
 
-            value =
-                Math.max(
-                    1,
-                    Math.min(
-                        500,
-                        value
-                    )
-                );
+            value = Math.max(1,
+                    Math.min(500, value));
 
 
-            meaninglessThreshold =
-                value;
+            meaninglessThreshold = value;
 
 
-            lengthInput.value =
-                value;
+            lengthInput.value = value;
 
 
-            plugin.setConfig(
-                "meaninglessThreshold",
-                value
-            );
+            plugin.setConfig("meaninglessThreshold", value);
 
 
             runMeaninglessLyricCheck();
@@ -633,14 +545,8 @@ plugin.onConfig(() => {
     );
 
 
-    container.appendChild(
-        delayOption
-    );
-
-
-    container.appendChild(
-        lengthOption
-    );
+    container.appendChild(delayOption);
+    container.appendChild(lengthOption);
 
 
     // 本地示例图片
@@ -653,11 +559,12 @@ plugin.onConfig(() => {
 
     container.appendChild(image);
 
-// 获取本地图片的完整路径
-    const imagePath =
-        `${plugin.pluginPath}\\preview.png`;
 
-// 将本地文件挂载为 HTTP 地址
+// 获取本地图片的完整路径
+    const imagePath = `${plugin.pluginPath}\\preview.png`;
+
+
+// 将本地文件挂载为HTTP地址
     if (typeof betterncm.fs?.mountFile === "function") {
         Promise.resolve()
             .then(() => betterncm.fs.mountFile(imagePath))
@@ -665,13 +572,7 @@ plugin.onConfig(() => {
                 if (typeof url !== "string" || !url) {
                     throw new Error("mountFile 未返回有效 URL");
                 }
-
                 image.src = url;
-
-                console.log(
-                    "[HideLyric] 本地图片加载地址：",
-                    url
-                );
             })
             .catch(error => {
                 console.error(
@@ -680,15 +581,8 @@ plugin.onConfig(() => {
                     error
                 );
             });
-    } else {
-        console.error(
-            "[HideLyric] 当前环境不支持 betterncm.fs.mountFile"
-        );
     }
-
-
     return container;
-
 });
 
 function getCurrentSong() {
@@ -753,12 +647,17 @@ let meaninglessLyricDetected= false;
 let meaninglessLyricClearTimer = null;
 
 
+// 当前播放/暂停状态
+// true = 暂停中
+// false = 播放中
+let isPausedState = false;
+
 // 当前是否有hide/show命令正在执行
 let commandRunning = false;
 
 
 // 最新目标状态
-// true  = hide
+// true = hide
 // false = show
 // null
 let pendingHide = null;
@@ -769,7 +668,6 @@ let pendingHide = null;
 async function pingRust() {
 
     try {
-        // 发送ping请求
         const response =
             await fetch(
                 `${RUST_URL}/ping`,
@@ -789,11 +687,6 @@ async function pingRust() {
         }
 
 
-        // 读取Rust返回内容
-        const text =
-            await response.text();
-
-
         // 标记Rust daemon已就绪
         rustReady =
             true;
@@ -802,10 +695,7 @@ async function pingRust() {
 
 
     } catch (error) {
-
-        // 标记 Rust daemon 不可用
-        rustReady =
-            false;
+        rustReady = false;
 
 
         // 启动如果只出现一次是正常现象
@@ -814,7 +704,6 @@ async function pingRust() {
             error
         );
 
-
         return false;
     }
 }
@@ -822,15 +711,11 @@ async function pingRust() {
 
 async function startRustDaemon() {
     try {
-
-        await betterncm.app.exec(
-            `"${RUST_EXE}" daemon`
-        );
+        await betterncm.app.exec(`"${RUST_EXE}" daemon`);
 
         return true;
 
     } catch (error) {
-
         console.error(
             "[HideLyric] Rust daemon 启动失败:",
             error
@@ -857,18 +742,15 @@ async function ensureRust() {
         (async () => {
             try {
                 if (await pingRust()) {
-                    lastCommand =
-                        null;
+                    lastCommand = null;
                     return true;
                 }
 
 
-                const started =
-                    await startRustDaemon();
+                const started = await startRustDaemon();
 
                 if (!started) {
-                    rustReady =
-                        false;
+                    rustReady = false;
                     return false;
                 }
 
@@ -881,13 +763,9 @@ async function ensureRust() {
                 while (
                     performance.now() - startTime < 2000
                     ) {
-
                     if (await pingRust()) {
 
-
-                        lastCommand =
-                            null;
-
+                        lastCommand = null;
 
                         return true;
                     }
@@ -905,16 +783,14 @@ async function ensureRust() {
                 );
 
 
-                rustReady =
-                    false;
+                rustReady = false;
 
 
                 return false;
 
-            } finally {
-
-                rustStartingPromise =
-                    null;
+            }
+            finally {
+                rustStartingPromise = null;
             }
 
         })();
@@ -939,28 +815,21 @@ async function sendRustCommand(command) {
             );
 
 
-
         if (!response.ok) {
-
             throw new Error(
                 `HTTP ${response.status}`
             );
         }
 
-
         return true;
 
     } catch (error) {
-
         console.error(
             `[HideLyric] Rust /${command} 失败:`,
             error
         );
 
-
-        rustReady =
-            false;
-
+        rustReady = false;
 
         return false;
     }
@@ -969,23 +838,12 @@ async function sendRustCommand(command) {
 
 
 async function controlLyricsWindow(hide) {
-
     // 记录最新目标状态
-    pendingHide =
-        hide;
+    pendingHide = hide;
 
-    /*
-    console.log(
-        "[HideLyric] 新的窗口目标状态 =",
-        hide ? "HIDE" : "SHOW"
-    );*/
 
     // 已经有命令正在执行
     if (commandRunning) {
-        /*
-        console.log(
-            "[HideLyric] wait"
-        );*/
         return;
     }
 
@@ -997,14 +855,11 @@ async function controlLyricsWindow(hide) {
     try {
 
         while (pendingHide !== null) {
-
             // 读取最新目标状态
-            const targetHide =
-                pendingHide;
+            const targetHide = pendingHide;
 
 
-            pendingHide =
-                null;
+            pendingHide = null;
 
 
             const command =
@@ -1015,17 +870,8 @@ async function controlLyricsWindow(hide) {
 
             // 如果已经成功发送过同样的命令,则不重复发送
             if (lastCommand === command) {
-                /*
-                console.log(
-                    `[HideLyric] 已经是 ${command} 状态，跳过`
-                );*/
                 continue;
             }
-
-            /*
-            console.log(
-                `[HideLyric] DesktopLyrics -> ${command}`
-            );*/
 
 
             // 等待Rust初始化
@@ -1036,20 +882,12 @@ async function controlLyricsWindow(hide) {
 
             // 如果初始化失败，尝试恢复
             if (!rustReady) {
-                const ready =
-                    await ensureRust();
+                const ready = await ensureRust();
 
 
                 if (!ready) {
-                    /*
-                    console.error(
-                        "[HideLyric] Rust daemon 初始化/恢复失败"
-                    );*/
-
-
                     pendingHide =
                         targetHide;
-
 
                     break;
                 }
@@ -1061,32 +899,12 @@ async function controlLyricsWindow(hide) {
 
 
             if (!success) {
-                /*
-                console.warn(
-                    "[HideLyric] Rust命令失败,尝试立即恢复ing"
-                );*/
-
-
-                const recovered =
-                    await ensureRust();
+                const recovered = await ensureRust();
 
 
                 if (recovered) {
-                    /*
-                    console.log(
-                        "[HideLyric] Rust daemon已恢复,重新发送:",
-                        command
-                    );*/
+                    success = await sendRustCommand(command);
 
-
-                    success =
-                        await sendRustCommand(command);
-
-                } else {
-                    /*
-                    console.error(
-                        "[HideLyric] Rust daemon恢复失败"
-                    );*/
                 }
             }
 
@@ -1094,13 +912,8 @@ async function controlLyricsWindow(hide) {
             if (success) {
                 lastCommand =
                     command;
-
-                /*
-                console.log(
-                    `[HideLyric] DesktopLyrics ${command} 成功`
-                );*/
-
-            } else {
+            }
+            else {
                 lastCommand =
                     null;
 
@@ -1113,32 +926,20 @@ async function controlLyricsWindow(hide) {
             }
         }
 
-    } finally {
-        commandRunning =
-            false;
+    }
+    finally {
+        commandRunning = false;
     }
 }
 
 
 // 隐藏
 function requestHide() {
-    if (
-        shouldHide === true &&
-        pendingHide === true
-    ) {
-
+    if (shouldHide === true && pendingHide === true) {
         return;
     }
 
-
-    shouldHide =
-        true;
-
-    /*
-    console.warn(
-        "[HideLyric] requestHide()"
-    );*/
-
+    shouldHide = true;
 
     controlLyricsWindow(true);
 }
@@ -1146,96 +947,114 @@ function requestHide() {
 
 // 显示
 function requestShow() {
-    if (
-        shouldHide === false &&
-        pendingHide === false
-    ) {
-
+    if (shouldHide === false && pendingHide === false) {
         return;
     }
 
-
     shouldHide =
         false;
-
-    /*
-    console.log(
-        "[HideLyric] ★ requestShow()"
-    );*/
 
 
     controlLyricsWindow(false);
 }
 
+// 读取当前播放状态
+// true = 暂停中
+// false = 播放中
+// null = 无法判断
+function getPlaybackState() {
+    if (ncmMajorVersion !== 2) {
+        if (document.querySelector('[aria-label="pause"][class*="cmd-icon-pause"]')) {
+            return false;
+        }
+        if (document.querySelector('[aria-label="play"][class*="cmd-icon-play"]')) {
+            return true;
+        }
+        return null;
+    }
 
-// 判断DesktopLyrics应该显示还是隐藏
-function updateLyricsWindowState() {
-    // 开关
-    if (!autoHideEnabled) {
+    const btn = document.querySelector('.btnp.f-cp');
+    if (btn) {
+        if (btn.classList.contains('btnp-pause')) {
+            return false;
+        }
+        if (btn.classList.contains('btnp-play')) {
+            return true;
+        }
+    }
 
-        requestShow();
 
+    if (document.querySelector('[title*="暂停"]')) {
+        return false;
+    }
+    if (document.querySelector('[title*="播放"]')) {
+        return true;
+    }
+
+    return null;
+}
+
+
+function updatePlaybackState() {
+    const paused = getPlaybackState();
+
+    if (paused === null) {
         return;
     }
 
-
-    if (meaninglessLyricDetected) {
-
-        requestHide();
-
-    } else {
-
-        requestShow();
+    if (paused === isPausedState) {
+        return;
     }
+
+    isPausedState = paused;
+
+    updateLyricsWindowState();
+}
+
+function updateLyricsWindowState() {
+    if (pauseHideEnabled && isPausedState) {
+        requestHide();
+        return;
+    }
+
+    if (autoHideEnabled && meaninglessLyricDetected) {
+        requestHide();
+        return;
+    }
+
+    requestShow();
 }
 
 
 function  updateMeaninglessLyricDetected(detected) {
     if (detected) {
-
-        // 清除延迟
         if (meaninglessLyricClearTimer) {
-
             clearTimeout(
                 meaninglessLyricClearTimer
             );
 
-
-            meaninglessLyricClearTimer =
-                null;
+            meaninglessLyricClearTimer = null;
         }
 
 
         if (meaninglessLyricDetected) {
-
             return;
         }
 
-
-        meaninglessLyricDetected =
-            true;
-
-        /*
-        console.warn(
-            "[HideLyric] 检测到滚木歌词"
-        );*/
-
+        meaninglessLyricDetected = true;
 
         updateLyricsWindowState();
-
 
         return;
     }
 
 
     if (!meaninglessLyricDetected) {
-
         return;
     }
 
 
     if (meaninglessLyricClearTimer) {
-
         return;
     }
 
@@ -1243,17 +1062,11 @@ function  updateMeaninglessLyricDetected(detected) {
     meaninglessLyricClearTimer =
         setTimeout(
             () => {
+                meaninglessLyricClearTimer = null;
 
-                meaninglessLyricClearTimer =
-                    null;
-
-
-                meaninglessLyricDetected =
-                    false;
-
+                meaninglessLyricDetected = false;
 
                 updateLyricsWindowState();
-
             },
             stateClearDelay
         );
@@ -1261,43 +1074,33 @@ function  updateMeaninglessLyricDetected(detected) {
 
 
 function checkMeaninglessLyric() {
-    const lyric =
-        document.querySelector(
-            ".LyricDisplayInnerContainer_l1o4576w"
+    const lyric = document.querySelector(
+        ".LyricDisplayInnerContainer_l1o4576w"
         );
 
 
-    const noLyric =
-        document.querySelector(
+    const noLyric = document.querySelector(
             ".no-lyric > span"
         );
 
 
-    const pureMusic =
-        document.querySelector(
+    const pureMusic = document.querySelector(
             ".NoLyricContainer_n1wmw8cp .content > span"
         );
 
-    const texts =
-        [];
+    const texts = [];
 
 
     if (lyric) {
-
-        const els =
-            lyric.querySelectorAll("p");
+        const els = lyric.querySelectorAll("p");
 
 
         for (const el of els) {
-
-            const text =
-                el.textContent?.trim() || "";
-
+            const text = el.textContent?.trim() || "";
 
             if (!text) {
                 continue;
             }
-
 
             texts.push(text);
         }
@@ -1305,61 +1108,42 @@ function checkMeaninglessLyric() {
 
 
     if (noLyric) {
-
-        const text =
-            noLyric.textContent?.trim() || "";
-
+        const text = noLyric.textContent?.trim() || "";
 
         if (text) {
-
             texts.push(text);
         }
     }
 
 
     if (pureMusic) {
-
-        const text =
-            pureMusic.textContent?.trim() || "";
-
+        const text = pureMusic.textContent?.trim() || "";
 
         if (text) {
-
             texts.push(text);
         }
     }
 
     if (texts.length === 0) {
-
         updateMeaninglessLyricDetected(false);
 
         return;
     }
 
 
-    const fullText =
-        texts.join("");
+    const fullText = texts.join("");
 
 
-    const normalizedText =
-        fullText.replace(
-            /[\s，,]/g,
-            ""
-        );
+    const normalizedText = fullText.replace(/[\s，,]/g, "");
 
 
-    const pureMusicKeywordDetected =
-        normalizedText.includes(
-            "纯音乐请欣赏"
-        );
+    const pureMusicKeywordDetected = normalizedText.includes("纯音乐请欣赏");
 
 
-    const length =
-        [...normalizedText].length;
+    const length = [...normalizedText].length;
 
 
-    const ScrollableLyric =
-        !!document.querySelector(
+    const ScrollableLyric = !!document.querySelector(
             '[class*="ScrollableLyricDisplayContainer_spqfaoe"]'
         );
 
@@ -1373,9 +1157,7 @@ function checkMeaninglessLyric() {
         );
 
 
-    updateMeaninglessLyricDetected(
-        detected
-    );
+    updateMeaninglessLyricDetected(detected);
 }
 
 
@@ -1415,8 +1197,7 @@ function normalizeApiLyric(lyric) {
             return !/^\s*\[(?:ti|ar|al|by|re|ve|offset|length):/i.test(line);
         })
         .map(line => {
-            return line
-                .replace(
+            return line.replace(
                     /^\s*(?:\[\d{1,2}:\d{2}(?:[.:]\d+)?\]\s*)+/,
                     ""
                 )
@@ -1429,14 +1210,11 @@ function normalizeApiLyric(lyric) {
 
 
 function evaluateApiLyric(lyric) {
-    const normalizedText =
-        normalizeApiLyric(lyric);
+    const normalizedText = normalizeApiLyric(lyric);
 
-    const pureMusicKeywordDetected =
-        normalizedText.includes("纯音乐请欣赏");
+    const pureMusicKeywordDetected = normalizedText.includes("纯音乐请欣赏");
 
-    const length =
-        [...normalizedText].length;
+    const length = [...normalizedText].length;
 
     const lrcTimedLineCount =
         String(lyric || "")
@@ -1453,8 +1231,7 @@ function evaluateApiLyric(lyric) {
 
     updateMeaninglessLyricDetected(detected);
 
-    apiLyricLastEvaluatedThreshold =
-        meaninglessThreshold;
+    apiLyricLastEvaluatedThreshold = meaninglessThreshold;
 }
 
 
@@ -1467,15 +1244,9 @@ async function checkMeaninglessLyricV2() {
         return;
     }
 
+    const songId = String(song.id);
 
-    const songId =
-        String(song.id);
     if (apiLyricSongId !== songId) {
-
-        console.log("[HideLyric] 检测到切歌:", {
-            songId,
-            songName: song.name
-        });
 
         apiLyricSongId = songId;
 
@@ -1491,10 +1262,7 @@ async function checkMeaninglessLyricV2() {
     }
 
     if (apiLyricText !== null) {
-        if (
-            apiLyricLastEvaluatedThreshold !==
-            meaninglessThreshold
-        ) {
+        if (apiLyricLastEvaluatedThreshold !== meaninglessThreshold) {
             evaluateApiLyric(apiLyricText);
         }
 
@@ -1513,20 +1281,10 @@ async function checkMeaninglessLyricV2() {
 
     apiLyricRequestedSongId = songId;
 
-    const requestToken =
-        apiLyricRequestToken;
+    const requestToken = apiLyricRequestToken;
 
-    /*
-    console.log(
-        "[HideLyric] 正在请求 2.x 歌词 API",
-        song.name,
-        "ID:",
-        songId
-    );*/
 
-    const url = new URL(
-        "https://music.163.com/api/song/lyric/v1"
-    );
+    const url = new URL("https://music.163.com/api/song/lyric/v1");
 
     Object.entries({
         tv: -1,
@@ -1561,47 +1319,25 @@ async function checkMeaninglessLyricV2() {
             );
         }
 
-        const data =
-            await response.json();
+        const data = await response.json();
 
 
-        if (
-            data.code != null &&
-            Number(data.code) !== 200
-        ) {
-            throw new Error(
-                `歌词 API 返回 code=${data.code}`
-            );
+        if (data.code != null && Number(data.code) !== 200) {
+            throw new Error(`歌词 API 返回 code=${data.code}`);
         }
 
         if (requestToken !== apiLyricRequestToken) {
             return;
         }
 
-        const latestSong =
-            getCurrentSong();
+        const latestSong = getCurrentSong();
 
         if (String(latestSong?.id) !== songId) {
             return;
         }
 
-        apiLyricText =
-            data.lrc?.lyric ?? "";
+        apiLyricText = data.lrc?.lyric ?? "";
 
-        /*
-        console.log(
-            "[HideLyric] 2.x 歌词获取完成:",
-            song.name,
-            "ID:",
-            songId,
-            "正文字符数:",
-            [...normalizeApiLyric(apiLyricText)].length
-        );
-
-        console.log(
-            "[HideLyric] 2.x 歌词内容：\n",
-            apiLyricText
-        );*/
 
         evaluateApiLyric(apiLyricText);
 
@@ -1628,20 +1364,14 @@ let lyricCheckDebugLogged = false;
 
 function runMeaninglessLyricCheck() {
     if (!lyricCheckDebugLogged) {
-        console.log(
-            "[HideLyric] 检测调度已执行",
-            {
-                ncmVersion,
-                ncmMajorVersion
-            }
-        );
         lyricCheckDebugLogged = true;
     }
 
 
     if (ncmMajorVersion === 2) {
         void checkMeaninglessLyricV2();
-    } else {
+    }
+    else {
         checkMeaninglessLyric();
     }
 }
@@ -1658,6 +1388,7 @@ window.__hideLyricTickCount = 0;
 
 window.__hideLyricmeaninglessLyricTimer = setInterval(() => {
     window.__hideLyricTickCount++;
+    updatePlaybackState();
     runMeaninglessLyricCheck();
 }, CHECK_INTERVAL);
 
@@ -1679,44 +1410,20 @@ window.__hideLyricHeartbeatTimer =
                 await pingRust();
 
 
-            // Rust正常
             if (alive) {
                 return;
             }
 
 
-            /*
-            console.warn(
-                "[HideLyric] Rust daemon似了,尝试自动恢复ing"
-            );*/
-
-
-            const recovered =
-                await ensureRust();
-
+            const recovered = await ensureRust();
 
             if (!recovered) {
-                /*
-                console.error(
-                    "[HideLyric] Rust daemon自动恢复失败"
-                );*/
-
-
                 return;
             }
 
-            /*
-            console.log(
-                "[HideLyric] Rust daemon已自动恢复"
-            );*/
-
-
-            lastCommand =
-                null;
-
+            lastCommand = null;
 
             updateLyricsWindowState();
-
         },
         5000
     );

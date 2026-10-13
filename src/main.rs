@@ -156,7 +156,6 @@ fn hide_lyrics() -> bool {
     let hwnd = match find_lyrics_window() {
         Some(hwnd) => hwnd,
         None => {
-            println!("[HideLyric] hide:找不到DesktopLyrics");
             return false;
         }
     };
@@ -172,7 +171,6 @@ fn hide_lyrics() -> bool {
         );
 
         if result == 0 {
-            println!("[HideLyric] hide:SetWindowRgn失败");
             return false;
         }
 
@@ -186,7 +184,6 @@ fn show_lyrics() -> bool {
     let hwnd = match find_lyrics_window() {
         Some(hwnd) => hwnd,
         None => {
-            println!("[HideLyric] show:找不到DesktopLyrics");
             return false;
         }
     };
@@ -199,7 +196,6 @@ fn show_lyrics() -> bool {
         );
 
         if result == 0 {
-            println!("[HideLyric] show:SetWindowRgn失败");
             return false;
         }
 
@@ -327,11 +323,6 @@ fn handle_connection(
         .next()
         .unwrap_or("");
 
-    println!(
-        "[HideLyric] HTTP: {}",
-        first_line
-    );
-
 
     if first_line.starts_with("OPTIONS ") {
         write_response(
@@ -447,7 +438,7 @@ fn run_daemon() {
             }
         };
 
-    // 非阻塞
+
     if let Err(error) =
         listener.set_nonblocking(true)
     {
@@ -477,10 +468,8 @@ fn run_daemon() {
                     Duration::from_millis(200)
                 );
 
-                // ------------------------------------------
-                // 检测网易云进程
-                // ------------------------------------------
 
+                // 检测网易云进程
                 if is_cloudmusic_running() {
                     cloudmusic_seen = true;
 
@@ -543,10 +532,6 @@ fn main() {
         env::args().collect();
 
     if args.len() < 2 {
-        println!(
-            "Usage: HideLyric.exe daemon"
-        );
-
         return;
     }
 
