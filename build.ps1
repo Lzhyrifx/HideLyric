@@ -36,8 +36,11 @@ if (!(Test-Path $exeSource -PathType Leaf)) {
 }
 
 
-$manifest = Get-Content $manifestPath -Raw |
-        ConvertFrom-Json
+$manifest = Get-Content `
+    -LiteralPath $manifestPath `
+    -Raw `
+    -Encoding UTF8 |
+        ConvertFrom-Json -ErrorAction Stop
 
 $version = $manifest.version
 
