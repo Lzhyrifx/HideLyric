@@ -12,11 +12,14 @@ if (!(Test-Path $manifestPath)) {
 }
 
 
-$manifest =
-Get-Content `
-        $manifestPath `
-        -Raw |
-        ConvertFrom-Json
+$manifestJson = [System.IO.File]::ReadAllText(
+        $manifestPath,
+        [System.Text.Encoding]::UTF8
+)
+
+$manifest = ConvertFrom-Json `
+    -InputObject $manifestJson `
+    -ErrorAction Stop
 
 
 $version =
