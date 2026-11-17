@@ -93,7 +93,15 @@ Write-Host "Pushing tag $tag to GitHub..."
 git push origin $tag
 
 
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Failed to push tag $tag to GitHub."
+    Write-Host "The tag exists locally but was NOT pushed. Fix the issue, then either:"
+    Write-Host "    git push origin $tag"
+    Write-Host "or:"
+    Write-Host "    git tag -d $tag"
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+
+
 Write-Host "Release triggered successfully."
-Write-Host "Version: $version"
-Write-Host "Tag: $tag"
-Write-Host "GitHub Actions should now build the new release."
